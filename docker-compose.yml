@@ -1,0 +1,68 @@
+version: '3'
+networks:
+  reddocker:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
+
+services:
+  mysql:
+    image: mysql:latest
+    restart: always
+    container_name: mysql
+    networks:
+      - reddocker
+    ports:
+      - 25060:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=mypassword
+      - MYSQL_DATABASE=mydatabase
+      - MYSQL_USER=myuser
+      - MYSQL_PASSWORD=mypassword
+    volumes:
+      - mysql_data:/var/lib/mysql  # Esta línea configura un volumen llamado 'mysql_data' para persistir los datos de MySQL
+
+  phpadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    container_name: phpadmin
+    networks:
+      - reddocker
+    ports:
+      - 8080:80
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PHP_UPLOAD_MAX_FILESIZE=300M
+      - UPLOAD_LIMIT=300M
+
+  app:
+    build:
+      context: /home/geovanny/my-api  # Ruta al directorio del proyecto, asegúrate de que sea correcta
+      dockerfile: Dockerfile  # Nombre del archivo Dockerfile
+    ports:
+      - "3010:3010"
+    volumes:
+      - ./src:/usr/src/app/src
+    environment:
+      - NODE_ENV=production
+    networks:
+      - reddocker  # Asegúrate de que la aplicación esté en la misma red que MySQL y phpadmin
+  appdos:
+    build:
+      context: /home/geovanny/my-api  # Ruta al directorio del proyecto, asegúrate de que sea correcta
+      dockerfile: Dockerfile  # Nombre del archivo Dockerfile
+    ports:
+      - "3008:3010"
+    volumes:
+      - ./src:/usr/src/app/src
+    environment:
+      - NODE_ENV=production
+    networks:
+      - reddocker  # Asegúrate de que la aplicación esté en la misma red que MySQL y phpadmin
+
+
+volumes:
+  mysql_data:  # Define el volumen llamado 'mysql_data'
